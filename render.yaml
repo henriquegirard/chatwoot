@@ -1,0 +1,60 @@
+services:
+  # 1. Aplicação Principal (Web)
+  - type: web
+    name: chatwoot-web
+    env: docker
+    plan: starter # Chatwoot precisa de RAM (Starter ou superior)
+    dockerContext: .
+    dockerfilePath: ./docker/Dockerfile
+    healthCheckPath: /health_check
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: true
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatwoot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chatwoot-redis
+          property: connectionString
+      - key: SECRET_KEY_BASE
+        generateValue: true
+
+  # 2. Worker (Processamento em segundo plano)
+  - type: worker
+    name: chatwoot-worker
+    env: docker
+    plan: starter
+    dockerContext: .
+    dockerfilePath: ./docker/Dockerfile
+    dockerCommand: bundle exec sidekiq -C config/sidekiq.yml
+    envVars:
+      - key: RAILS_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: chatwoot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chatwoot-redis
+          property: connectionString
+
+databases:
+  - name: chatwoot-db
+    plan: starter
+    databaseName: chatwoot_production
+    user: chatwoot
+
+services:
+  - type: redis
+    name: chatwoot-redis
+    plan: starter
+    ipAllowList: [] # Permite acesso apenas interno
