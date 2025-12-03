@@ -3,7 +3,7 @@ services:
   - type: web
     name: chatwoot-web
     env: docker
-    plan: starter # Chatwoot precisa de RAM (Starter ou superior)
+    plan: starter
     dockerContext: .
     dockerfilePath: ./docker/Dockerfile
     healthCheckPath: /health_check
@@ -47,14 +47,15 @@ services:
           name: chatwoot-redis
           property: connectionString
 
+  # 3. Redis (Movido para dentro da lista única de services)
+  - type: redis
+    name: chatwoot-redis
+    plan: starter
+    ipAllowList: [] # Permite acesso apenas interno dos outros serviços
+
+# Databases fica separado, pois é outra categoria raiz
 databases:
   - name: chatwoot-db
     plan: starter
     databaseName: chatwoot_production
     user: chatwoot
-
-services:
-  - type: redis
-    name: chatwoot-redis
-    plan: starter
-    ipAllowList: [] # Permite acesso apenas interno
